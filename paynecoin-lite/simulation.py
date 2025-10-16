@@ -58,7 +58,7 @@ def build_sample_blockchain():
     # For each block, create exactly 2 transactions among You, Alice, Bob
     import random
 
-    # Create blocks with deterministic transactions to prevent negative balances
+    # Create blocks with deterministic transactions
     # Format: (sender, receiver, amount)
     planned_transactions = [
         # Block 1 (You have 100 tokens initially)
