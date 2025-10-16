@@ -58,9 +58,22 @@ def create_transaction(
         "timestamp": int(time()),
     }
 
-    # TODO: Generate a signature for the transaction from the private key, tx["signature"] = ...
+    # Create a canonical message for signing (exclude signature)
+    message = json.dumps(
+        {
+            "sender": tx["sender"],
+            "receiver": tx["receiver"],
+            "amount": tx["amount"],
+            "timestamp": tx["timestamp"],
+        },
+        sort_keys=True,
+    ).encode()
 
-    # end TODO
+    # Sign the message with the sender's private key (Ed25519)
+    signature_bytes = private_key.sign(message)
+
+    # Store signature as hex string for easy serialization
+    tx["signature"] = signature_bytes.hex()
 
     return tx
 
@@ -72,8 +85,36 @@ def is_from_sender(tx: dict) -> bool:
     :return: <bool>
     """
 
-    # TODO: return True if the transaction's signature is valid, else False
+    # Verify signature exists
+    sig_hex = tx.get("signature")
+    if not sig_hex:
+        return False
 
-    # end TODO
+    try:
+        signature = bytes.fromhex(sig_hex)
+    except Exception:
+        return False
 
-    return True
+    # Recreate the canonical message that was signed
+    try:
+        message = json.dumps(
+            {
+                "sender": tx["sender"],
+                "receiver": tx["receiver"],
+                "amount": tx["amount"],
+                "timestamp": tx["timestamp"],
+            },
+            sort_keys=True,
+        ).encode()
+    except Exception:
+        return False
+
+    # Load the public key object and verify signature
+    try:
+        public_key_obj = string_to_public_key(tx["sender"])
+        public_key_obj.verify(signature, message)
+        return True
+    except InvalidSignature:
+        return False
+    except Exception:
+        return False
